@@ -40,7 +40,7 @@ jobs:
           arduino-cli compile \
             --fqbn esp32:esp32:esp32s3:FlashMode=qio,FlashSize=16M,PSRAM=opi,PartitionScheme=custom,CDCOnBoot=cdc,DebugLevel=none \
             --output-dir build_out \
-            MiniOS
+            MiniOS 2>&1 | tee build_out/compile.log
 
       - name: Report Flash and RAM usage and prepare OTA/OTG binaries
         run: |
@@ -52,9 +52,6 @@ jobs:
           cp build_out/MiniOS.ino.bin build_out/minios_app_0x10000.bin
 
           # Full image starting at 0x0 (bootloader 0x0, partitions 0x8000, app0 0x10000)
-          BOOT_BIN=$(find build_out -name "*bootloader*.bin" | head -n 1)
-          PART_BIN=$(find build_out -name "*partitions*.bin" | head -n 1)
-
           python3 - <<'EOF'
           import os, glob
 
