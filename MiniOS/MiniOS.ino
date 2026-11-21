@@ -33,11 +33,14 @@ void setup() {
 
   net_init_wifi_and_server(s_wifi_cfg);
 
+  bool staInitOk = net_is_sta_connected();
+  String initIp = staInitOk ? WiFi.localIP().toString() : WiFi.softAPIP().toString();
+
   SystemStatus st = {
     g_fs_ready,
     g_cam_ready,
     g_mic_ready,
-    net_is_sta_connected(),
+    staInitOk,
     false,
     g_cam_last_err,
     (int)WiFi.softAPgetStationNum(),
@@ -45,7 +48,7 @@ void setup() {
     ESP.getFreePsram()
   };
   ui_update_status_badges(st);
-  ui_update_dynamic_island(net_is_sta_connected(), WiFi.localIP().toString().c_str());
+  ui_update_dynamic_island(staInitOk, initIp.c_str());
 
   Serial.println("=== MiniOS Ready ===");
 }
