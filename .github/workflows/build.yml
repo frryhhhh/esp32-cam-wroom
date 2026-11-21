@@ -46,32 +46,39 @@ jobs:
         run: |
           echo "=== Memory Usage ==="
           grep -E "(Sketch uses|Global variables use)" build_out/compile.log || true
-          ls -lh build_out/MiniOS.ino.*
+          echo "=== Files in build_out ==="
+          find build_out -maxdepth 3 -type f | sort
 
-          # App-only binary (offset 0x10000)
-          cp build_out/MiniOS.ino.bin build_out/minios_app_0x10000.bin
+          APP_BIN=$(find build_out -type f -name "MiniOS*.bin" ! -name "*bootloader*" ! -name "*partitions*" ! -name "*minios_*" | head -n 1)
+          PART_SRC=$(find build_out -type f -name "*partitions*.bin" | head -n 1)
+          BOOT_SRC=$(find build_out -type f -name "*bootloader*.bin" | head -n 1)
 
-          # Full image starting at 0x0 (bootloader 0x0, partitions 0x8000, app0 0x10000)
-          python3 - <<'EOF'
-          import os, glob
+          echo "APP_BIN=$APP_BIN"
+          echo "PART_SRC=$PART_SRC"
+          echo "BOOT_SRC=$BOOT_SRC"
 
-          out_dir = "build_out"
-          boot_candidates = glob.glob(os.path.join(out_dir, "*bootloader*.bin"))
-          part_candidates = glob.glob(os.path.join(out_dir, "*partitions*.bin"))
-          app_path = os.path.join(out_dir, "MiniOS.ino.bin")
-          full_path = os.path.join(out_dir, "minios_full_0x0.bin")
+          test -n "$APP_BIN"
+          test -n "$PART_SRC"
+          test -n "$BOOT_SRC"
 
-          assert boot_candidates, "Bootloader binary not found"
-          assert part_candidates, "Partition binary not found"
-          assert os.path.exists(app_path), "App binary not found"
+          cp "$APP_BIN" build_out/minios_app_0x10000.bin
+          cp "$PART_SRC" build_out/MiniOS.ino.partitions.bin
 
-          img = bytearray(b"\xff" * (0x10000 + os.path.getsize(app_path)))
+          python3 - <<EOF
+          import os
 
-          with open(boot_candidates[0], "rb") as f:
+          boot_path = "$BOOT_SRC"
+          part_path = "$PART_SRC"
+          app_path = "$APP_BIN"
+          full_path = "build_out/minios_full_0x0.bin"
+
+          img = bytearray(b"\\xff" * (0x10000 + os.path.getsize(app_path)))
+
+          with open(boot_path, "rb") as f:
               b_data = f.read()
           img[0x0:0x0 + len(b_data)] = b_data
 
-          with open(part_candidates[0], "rb") as f:
+          with open(part_path, "rb") as f:
               p_data = f.read()
           img[0x8000:0x8000 + len(p_data)] = p_data
 
