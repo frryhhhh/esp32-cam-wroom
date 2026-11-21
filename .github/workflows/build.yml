@@ -31,8 +31,8 @@ jobs:
         run: |
           cp partitions.csv MiniOS/partitions.csv
           cp lv_conf.h MiniOS/lv_conf.h
-          mkdir -p /root/Arduino/libraries
-          ln -sfn "$(pwd)/lv_conf.h" /root/Arduino/libraries/lv_conf.h
+          mkdir -p "$HOME/Arduino/libraries"
+          ln -sfn "$(pwd)/lv_conf.h" "$HOME/Arduino/libraries/lv_conf.h"
 
       - name: Compile MiniOS for ESP32-S3-WROOM-1 N16R8
         run: |
